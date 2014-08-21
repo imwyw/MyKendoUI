@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Binding to local data</title>
+    <meta charset="utf-8">
+    <link href="../../content/shared/styles/examples-offline.css" rel="stylesheet">
+    <link href="../../../styles/kendo.common.min.css" rel="stylesheet">
+    <link href="../../../styles/kendo.rtl.min.css" rel="stylesheet">
+    <link href="../../../styles/kendo.default.min.css" rel="stylesheet">
+
+    <script src="../../../js/jquery.min.js"></script>
+    <script src="../../../js/kendo.web.min.js"></script>
+    <script src="../../content/shared/js/console.js"></script>
+    <script src="../../../MyDemo/common.js"></script>
+    <script>
+
+    </script>
+
+
+</head>
+<body>
+
+    <a class="offline-button" href="../index.html">Back</a>
+
+    <script src="../../content/shared/js/products.js"></script>
+
+    <a class="k-button" id="btnExport" href="javascript:void(0)" target="_self">导出</a>
+    <div id="example" class="k-content">
+        <div id="grid"></div>
+
+        <script>
+            $(document).ready(function () {
+                $("#grid").kendoGrid({
+                    dataSource: {
+                        data: products,
+                        schema: {
+                            model: {
+                                fields: {
+                                    ProductName: { type: "string" },
+                                    UnitPrice: { type: "number" },
+                                    UnitsInStock: { type: "number" },
+                                    Discontinued: { type: "boolean" }
+                                }
+                            }
+                        },
+                        pageSize: 20
+                    },
+                    height: 430,
+                    scrollable: true,
+                    sortable: true,
+                    filterable: true,
+                    pageable: {
+                        input: true,
+                        numeric: false
+                    },
+                    columns: [
+                        "ProductName",
+                        { field: "UnitPrice", title: "Unit Price", format: "{0:c}", width: "130px" },
+                        { field: "UnitsInStock", title: "Units In Stock", width: "130px" },
+                        { field: "Discontinued", width: "130px" }
+                    ]
+                });
+
+
+                $("#btnExport").click(function () {
+                    var grid = $("#grid").data("kendoGrid");
+                    var csv_content = exportToCSV(grid);
+                    var blob = new Blob(["\ufeff", csv_content]);
+                    var fileName = "123.csv";
+                    saveAs(blob, fileName);
+                });
+            });
+
+            function exportToCSV(grid) {
+                var csv = '',
+                    
+                datasource = grid.dataSource;
+                //originalPageSize = datasource.pageSize();
+
+                // Increase page size to cover all the data and get a reference to that data
+                //datasource.pageSize(datasource.total());
+                var data = datasource.view();
+
+                //add the header row
+                for (var i = 0; i < grid.columns.length; i++) {
+                    if (grid.columns[i].hidden) {//不导出隐藏的列
+                        continue;
+                    }
+                    var title = grid.columns[i].title,
+                        field = grid.columns[i].field;
+                    if (typeof (field) === "undefined") {
+                        continue;
+                    }
+                    if (typeof (title) === "undefined") { title = field }
+
+                    title = title.replace(/"/g, '""');
+                    csv += '"' + title + '"';
+                    if (i < grid.columns.length - 1) {
+                        csv += ",";
+                    }
+                }
+
+                csv += "\n";
+
+                //add each row of data
+                for (var row in data) {
+                    for (var i = 0; i < grid.columns.length; i++) {
+                        if (grid.columns[i].hidden) {//不导出隐藏的列
+                            continue;
+                        }
+                        var fieldName = grid.columns[i].field;
+                        if (typeof (fieldName) === "undefined") { continue; }
+                        var value = data[row][fieldName];
+
+                        if (value == null) {
+                            value = "";
+                        } else {
+                            value = value.toString();
+                        }
+
+                        value = value.replace(/"/g, '""');
+                        csv += '"' + value + '"';
+                        if (i < grid.columns.length - 1) {
+                            csv += ",";
+                        }
+                    }
+                    csv += "\n";
+                }
+
+                // Reset datasource
+                //datasource.pageSize(originalPageSize);
+
+                return csv;
+            }
+        </script>
+    </div>
+
+
+
+</body>
+</html>
